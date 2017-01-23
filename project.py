@@ -243,18 +243,24 @@ class _CopyFile(object):
       try:
         # remove existing file first, since it might be read-only
         if os.path.exists(dest):
-          os.remove(dest)
+          if os.path.isdir(dest):
+            shutil.rmtree(dest)
+          else:
+            os.remove(dest)
         else:
           dest_dir = os.path.dirname(dest)
           if not os.path.isdir(dest_dir):
             os.makedirs(dest_dir)
-        shutil.copy(src, dest)
+        if os.path.isdir(src):
+          shutil.copytree(src, dest)
+        elif os.path.isfile(src):
+          shutil.copy(src, dest)
         # make the file read-only
-        mode = os.stat(dest)[stat.ST_MODE]
-        mode = mode & ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
-        os.chmod(dest, mode)
-      except IOError:
-        _error('Cannot copy file %s to %s', src, dest)
+        #mode = os.stat(dest)[stat.ST_MODE]
+        #mode = mode & ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+        #os.chmod(dest, mode)
+      except IOError as e:
+          _error('Cannot copy file %s to %s: %s', src, dest, e)
 
 
 class _LinkFile(object):
